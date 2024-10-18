@@ -1,24 +1,19 @@
 #!/usr/bin/env python
 from __future__ import print_function, division
-
+import h5py
 import os
-import time
 import numpy as np
 import theano
 import theano.tensor as T
 import lasagne
 import argparse
 import matplotlib.pyplot as plt
-
 from os.path import join
 from scipy.io import loadmat
-
 from utils import compressed_sensing as cs
 from utils.metric import complex_psnr
-
 from cascadenet.network.model import build_d2_c2
-from cascadenet.util.helpers import from_lasagne_format
-from cascadenet.util.helpers import to_lasagne_format
+from cascadenet.util.helpers import from_lasagne_format, to_lasagne_format
 
 
 def prep_input(im, acc=4):
@@ -40,15 +35,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     acc = float(args.acceleration_factor[0])
-    Nx, Ny = 128, 128
+    Nx, Ny = 640, 320  # Image dimensions (change if needed)
     save_fig = args.savefig
 
     # Load pre-trained model weights
     model_name = 'd2_c2'
-    project_root = '.'
+    project_root = '.'  # Adjust if your project structure is different
     save_dir = join(project_root, 'models/%s' % model_name)
 
-    # Specify network
+    # Specify network input shape
     input_shape = (1, 2, Nx, Ny)  # single image, batch size = 1
     net_config, net = build_d2_c2(input_shape)
 
@@ -57,9 +52,16 @@ if __name__ == '__main__':
         param_values = [f['arr_{0}'.format(i)] for i in range(len(f.files))]
         lasagne.layers.set_all_param_values(net, param_values)
 
-    # Load your single test image
-    # Here, for demo purposes, using the first image from the dummy dataset
-    test_image = loadmat(join(project_root, './data/lustig_knee_p2.mat'))['xn'][..., 0]
+    # Load your MRI data
+    file_path = '/content/Deep-MRI-Reconstruction/file_brain_AXT1POST_207_2070829_undersampled.h5'
+    with h5py.File(file_path, 'r') as f:
+        # Assuming the data is stored under a key, e.g., 'data'
+        mri_data = f['data'][()]
+    
+    # Select one coil and one slice
+    coil_index = 1  # Change this if you want to use a different coil
+    slice_index = 8  # Change this if you want to use a different slice
+    test_image = mri_data[slice_index, coil_index]  # Shape will be (640, 320)
 
     # Preprocess the image
     im_und, k_und, mask, im_gnd = prep_input(test_image, acc=acc)
