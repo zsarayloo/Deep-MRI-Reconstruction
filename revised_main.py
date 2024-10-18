@@ -35,7 +35,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     acc = float(args.acceleration_factor[0])
-    Nx, Ny = 640, 320  # Image dimensions (change if needed)
+    Nx, Ny = 640, 322  # Image dimensions (change if needed)
     save_fig = args.savefig
 
     # Load pre-trained model weights
@@ -53,15 +53,18 @@ if __name__ == '__main__':
         lasagne.layers.set_all_param_values(net, param_values)
 
     # Load your MRI data
-    file_path = '/content/Deep-MRI-Reconstruction/file_brain_AXT1POST_207_2070829_undersampled.h5'
-    with h5py.File(file_path, 'r') as f:
-        # Assuming the data is stored under a key, e.g., 'data'
-        mri_data = f['data'][()]
+    Un_Sample_data = '/content/Deep-MRI-Reconstruction/file_brain_AXT1POST_207_2070829_undersampled.h5'
+    # load original data
+    un_sample = h5py.File(Un_Sample_data) # Read HDF5 data (MRI aquired data)
+    un_kspace = un_sample['kspace'][:]
+
+
+
     
     # Select one coil and one slice
     coil_index = 1  # Change this if you want to use a different coil
     slice_index = 8  # Change this if you want to use a different slice
-    test_image = mri_data[slice_index, coil_index]  # Shape will be (640, 320)
+    test_image = un_kspace[slice_index, coil_index]  # Shape will be (640, 320)
 
     # Preprocess the image
     im_und, k_und, mask, im_gnd = prep_input(test_image, acc=acc)
